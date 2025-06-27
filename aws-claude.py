@@ -516,7 +516,7 @@ def completions():
         if stop:
             bed_params['stop_sequences'] = stop
 
-        if req.get('stream', False):
+        if req.get('stream', True):
             body = json.dumps(bed_params)
             try:
                 # 记录请求参数，便于调试
@@ -700,7 +700,7 @@ def chat_completions():
 
         messages = req.get('messages', [])
 
-        # ====== 修正：只处理 system，其他消息全部保留 ======
+        # 处理消息，提取system消息并设置代理
         system_content = None
         filtered_messages = []
         for i, msg in enumerate(messages):
@@ -714,7 +714,6 @@ def chat_completions():
                 continue
             # 只跳过 system，其余全部保留
             filtered_messages.append(msg)
-        # ====== 修正结束 ======
 
         # 确保至少有一条用户消息
         if not filtered_messages or not any(msg.get('role') == 'user' for msg in filtered_messages):
@@ -816,7 +815,7 @@ def chat_completions():
         if req.get('stop', None):
             bed_params['stop_sequences'] = req.get('stop') if isinstance(req.get('stop'), list) else [req.get('stop')]
 
-        if req.get('stream', False):
+        if req.get('stream', True):
             body = json.dumps(bed_params)
             try:
                 # 记录请求参数，便于调试
