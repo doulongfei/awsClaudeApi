@@ -27,7 +27,7 @@ from botocore.exceptions import ClientError
 from flask import Flask, request, Response, jsonify
 
 # 调试模式配置
-DEBUG_MODE = os.environ.get('DEBUG_MODE', 'false').lower() == 'true'
+DEBUG_MODE = os.environ.get('DEBUG_MODE', 'true').lower() == 'true'
 
 # 使用绝对路径
 log_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "logs")
@@ -700,6 +700,10 @@ def chat_completions():
 
         messages = req.get('messages', [])
 
+        # ===== 新增：图片格式转换 =====
+        messages = convert_image_url_to_image(messages)
+        # ===== 新增结束 =====
+
         # 处理消息，提取system消息并设置代理
         system_content = None
         filtered_messages = []
@@ -1051,6 +1055,45 @@ def is_claude_37_configured():
                 return False
 
     return True
+
+
+def convert_image_url_to_image(messages):
+    """
+    将OpenAI格式的图片消息（type: image_url）转换为Claude Bedrock API支持的格式（type: image）。
+    """
+    for msg in messages:
+        content = msg.get('content')
+        # 只处理content为list的情况
+        if isinstance(content, list):
+            new_content = []
+            for part in content:
+                if isinstance(part, dict) and part.get('type') == 'image_url':
+                    image_url = part.get('image_url', {})
+                    url = image_url.get('url', '')
+                    # 只处理base64图片
+                    if url.startswith('data:image/'):
+                        # 解析media_type和base64数据
+                        try:
+                            header, b64data = url.split(',', 1)
+                            media_type = header.split(';')[0].replace('data:', '')
+                        except Exception:
+                            media_type = "image/png"
+                            b64data = ""
+                        new_content.append({
+                            "type": "image",
+                            "source": {
+                                "type": "base64",
+                                "media_type": media_type,
+                                "data": b64data
+                            }
+                        })
+                    else:
+                        # 非base64图片暂不支持，跳过或可抛异常
+                        continue
+                else:
+                    new_content.append(part)
+            msg['content'] = new_content
+    return messages
 
 
 if __name__ == '__main__':
