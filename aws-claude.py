@@ -717,11 +717,11 @@ def chat_completions():
         for i, msg in enumerate(messages):
             if i == 0 and msg.get('role') == 'system':
                 system_content = msg.get('content', '')
-                zh_hint = "请用中文回答所有问题。"
-                if system_content and zh_hint not in system_content:
-                    system_content = zh_hint + system_content
-                elif not system_content:
-                    system_content = zh_hint
+                # zh_hint = "请用中文回答所有问题。"
+                # if system_content and zh_hint not in system_content:
+                #     system_content = zh_hint + system_content
+                # elif not system_content:
+                #     system_content = zh_hint
                 continue
             # 只跳过 system，其余全部保留
             filtered_messages.append(msg)
