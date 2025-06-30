@@ -23,6 +23,7 @@ from logging.handlers import RotatingFileHandler
 
 import boto3
 import tiktoken
+from botocore.config import Config  # 新增
 from botocore.exceptions import ClientError
 from flask import Flask, request, Response, jsonify
 
@@ -77,11 +78,17 @@ if DEBUG_MODE:
 else:
     logger.info("运行在正常模式 - 仅输出信息和警告日志")
 
+# ===== 新增：设置代理 =====
+os.environ['HTTP_PROXY'] = 'http://127.0.0.1:12334'
+os.environ['HTTPS_PROXY'] = 'http://127.0.0.1:12334'
+proxy_config = Config(proxies={'http': 'http://127.0.0.1:12334', 'https': 'http://127.0.0.1:12334'})
+# =========================
+
 app = Flask(__name__)
-bedrock_runtime = boto3.client('bedrock-runtime', region_name='us-east-1')
+bedrock_runtime = boto3.client('bedrock-runtime', region_name='us-east-1', config=proxy_config)  # 修改
 
 # 全局配置
-DEFAULT_MAX_TOKENS = 4096  # 默认输出token限制
+DEFAULT_MAX_TOKENS = 128000  # 默认输出token限制
 MAX_OUTPUT_TOKENS = 128000  # Claude 3.7支持的最大输出tokens
 
 # 针对不同模型的最大token限制
@@ -718,6 +725,36 @@ def chat_completions():
                 continue
             # 只跳过 system，其余全部保留
             filtered_messages.append(msg)
+
+        # ===== 新增：过滤空content消息 =====
+        def is_content_empty(msg):
+            content = msg.get('content', None)
+            if content is None:
+                return True
+            if isinstance(content, str):
+                return not content.strip()
+            if isinstance(content, list):
+                # 所有元素都为空字符串或空dict时视为空
+                return all(
+                    (isinstance(part, str) and not part.strip()) or
+                    (isinstance(part, dict) and not part)
+                    for part in content
+                )
+            return False
+
+        # 只允许最后一条assistant消息为空，其余都必须有内容
+        cleaned_messages = []
+        for idx, msg in enumerate(filtered_messages):
+            is_last = (idx == len(filtered_messages) - 1)
+            if is_content_empty(msg):
+                if is_last and msg.get('role') == 'assistant':
+                    cleaned_messages.append(msg)
+                else:
+                    continue
+            else:
+                cleaned_messages.append(msg)
+        filtered_messages = cleaned_messages
+        # ===== 新增结束 =====
 
         # 确保至少有一条用户消息
         if not filtered_messages or not any(msg.get('role') == 'user' for msg in filtered_messages):
