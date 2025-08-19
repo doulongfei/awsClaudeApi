@@ -79,13 +79,13 @@ else:
     logger.info("运行在正常模式 - 仅输出信息和警告日志")
 
 # ===== 新增：设置代理 =====
-os.environ['HTTP_PROXY'] = 'http://127.0.0.1:12334'
-os.environ['HTTPS_PROXY'] = 'http://127.0.0.1:12334'
-proxy_config = Config(proxies={'http': 'http://127.0.0.1:12334', 'https': 'http://127.0.0.1:12334'})
+# os.environ['HTTP_PROXY'] = 'http://127.0.0.1:12334'
+# os.environ['HTTPS_PROXY'] = 'http://127.0.0.1:12334'
+# proxy_config = Config(proxies={'http': 'http://127.0.0.1:12334', 'https': 'http://127.0.0.1:12334'})
 # =========================
 
 app = Flask(__name__)
-bedrock_runtime = boto3.client('bedrock-runtime', region_name='us-east-1', config=proxy_config)  # 修改
+bedrock_runtime = boto3.client('bedrock-runtime', region_name='us-east-1')  # 修改
 
 # 全局配置
 DEFAULT_MAX_TOKENS = 128000  # 默认输出token限制
