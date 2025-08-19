@@ -91,11 +91,12 @@ bedrock_runtime = boto3.client('bedrock-runtime', region_name='us-east-1', confi
 DEFAULT_MAX_TOKENS = 128000  # 默认输出token限制
 MAX_OUTPUT_TOKENS = 128000  # Claude 3.7支持的最大输出tokens
 
-# 针对不同模型的最大token限制
 MODEL_MAX_TOKENS = {
+    'claude-4-1-opus': 128000,
+    'claude-4-opus': 128000,
+    'claude-4-sonnet': 4096,
     'claude-3-7-sonnet': 128000,
     'claude-3-7-sonnet-thinking': 128000,
-    'claude-4-sonnet': 4096,
     'claude-3-opus': 4096,
     'claude-3-5-sonnet': 4096,
     'claude-3-sonnet': 4096,
@@ -103,9 +104,12 @@ MODEL_MAX_TOKENS = {
     'claude-2': 4096,
     'claude-instant': 4096
 }
+# 针对不同模型的最大token限制
 
 # 模型映射字典
 MODEL_MAPPING = {
+    'claude-4-1-opus': 'us.anthropic.claude-opus-4-1-20250805-v1:0',
+    'claude-4-opus': 'us.anthropic.claude-opus-4-20250514-v1:0',
     'claude-4-sonnet': 'us.anthropic.claude-sonnet-4-20250514-v1:0',
     'claude-3-7-sonnet': 'us.anthropic.claude-3-7-sonnet-20250219-v1:0',
     'claude-3-7-sonnet-thinking': 'us.anthropic.claude-3-7-sonnet-20250219-v1:0',  # 思考模式
@@ -1165,4 +1169,4 @@ if __name__ == '__main__':
     logger.info("=" * 50)
 
     # 启动服务器
-    app.run(host='0.0.0.0', threaded=True, processes=1)
+    app.run(host='0.0.0.0', port=8080, threaded=True, processes=1)
